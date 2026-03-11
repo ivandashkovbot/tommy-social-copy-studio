@@ -15,8 +15,10 @@ function parseArray(raw) {
   }
 }
 
+const env = (key, fallback = '') => (process.env[key] ?? fallback).trim()
+
 async function callOpenAI({ prompt, retry }) {
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = env('OPENAI_API_KEY')
   if (!apiKey) return { ok: false, reason: 'missing_key', detail: 'OPENAI_API_KEY not set' }
 
   const response = await fetch('https://api.openai.com/v1/responses', {
@@ -26,7 +28,7 @@ async function callOpenAI({ prompt, retry }) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      model: env('OPENAI_MODEL', 'gpt-4o-mini'),
       input: retry
         ? `${prompt}\n\nImportant retry instruction: Return strictly valid JSON array of strings only. No preface. No markdown.`
         : prompt,
@@ -48,9 +50,9 @@ async function callOpenAI({ prompt, retry }) {
 }
 
 async function callOllama({ prompt, retry }) {
-  const baseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434'
-  const model = process.env.OLLAMA_MODEL || 'llama3.1:8b'
-  const proxyToken = process.env.OLLAMA_PROXY_TOKEN
+  const baseUrl = env('OLLAMA_BASE_URL', 'http://127.0.0.1:11434')
+  const model = env('OLLAMA_MODEL', 'llama3.1:8b')
+  const proxyToken = env('OLLAMA_PROXY_TOKEN')
 
   const headers = { 'Content-Type': 'application/json' }
   if (proxyToken) headers.Authorization = `Bearer ${proxyToken}`
@@ -88,9 +90,9 @@ export default async function handler(req, res) {
   const { brief, controls, sampleCaptions } = req.body || {}
   if (!brief || !controls || !sampleCaptions) return res.status(400).json({ reason: 'bad_request' })
 
-  const provider = (process.env.LLM_PROVIDER || 'openai').toLowerCase()
+  const provider = env('LLM_PROVIDER', 'openai').toLowerCase()
 
-  if (provider === 'ollama' && process.env.OLLAMA_REQUIRE_PROXY_TOKEN === 'true' && !process.env.OLLAMA_PROXY_TOKEN) {
+  if (provider === 'ollama' && env('OLLAMA_REQUIRE_PROXY_TOKEN', 'false').toLowerCase() === 'true' && !env('OLLAMA_PROXY_TOKEN')) {
     return res.status(500).json({ reason: 'missing_proxy_token', provider })
   }
 
