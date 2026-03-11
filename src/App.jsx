@@ -29,7 +29,7 @@ const collections = ['Spring 2026', 'Heritage Classics', 'Modern Prep', 'Eyewear
 const heroProducts = ['polo', 'trench', 'blazer', 'eyewear', 'watch', 'jewelry']
 const contentTypes = ['Product Highlight', 'Talent Feature', 'Campaign Post', 'Seasonal Style', 'Event / Culture Moment']
 const objectives = ['Brand Awareness', 'Engagement', 'Product Focus']
-const moods = ['Effortless', 'Classic', 'Modern', 'Polished', 'Energetic']
+const moods = ['Effortless', 'Classic', 'Modern', 'Polished', 'Energetic', 'Funny', 'Playful']
 const platforms = ['Instagram', 'X', 'TikTok', 'Threads']
 const styles = ['Core Tommy', 'More Editorial', 'More Celebrity-Led', 'More Product-Forward', 'More Seasonal', 'More Campaign-Led']
 const lengths = ['Short', 'Medium', 'Slightly Extended']
@@ -79,63 +79,87 @@ function buildCaption(brief, controls, idx) {
   const product = brief.heroProductCustom.trim() || brief.heroProduct
   const collection = brief.collectionCustom.trim() || brief.collection
   const talent = brief.talent.trim()
-  const notes = brief.notes.trim().toLowerCase()
+  const notesRaw = brief.notes.trim()
+  const notes = notesRaw.toLowerCase()
   const seed = controls.randomize
     ? Math.floor(Math.random() * 999999)
     : hashSeed(JSON.stringify({ ...brief, ...controls, idx }))
 
-  const descriptors = ['classic layer', 'timeless staple', 'modern essential', 'effortless finish', 'refined statement']
-  const seasonalPhrases = ['for spring', 'for the season ahead', 'for now and next', 'for Spring 2026', 'for every day style']
-  const campaignVerbs = ['setting the tone', 'leading the season', 'remixing heritage', 'defining the moment', 'framing the look']
+  const eventHints = ['race weekend', 'grand prix', 'f1', 'event', 'launch', 'party', 'trackside', 'paddock', 'afterparty']
+  const locationHints = ['miami', 'paris', 'new york', 'london', 'milan', 'monaco', 'tokyo']
+  const moodText = `${brief.mood} ${notes}`.toLowerCase()
+  const hasEvent = eventHints.some((hint) => notes.includes(hint)) || brief.contentType === 'Event / Culture Moment'
+  const location = locationHints.find((city) => notes.includes(city))
+  const eventPhrase =
+    (notes.includes('miami') && notes.includes('race weekend') && 'Miami race weekend')
+    || (notes.includes('grand prix') && `${location ? titleCase(location) : 'Grand Prix'} spotlight`)
+    || (notes.includes('f1') && `${location ? titleCase(location) : 'F1'} pace`)
+    || (brief.contentType === 'Event / Culture Moment' && `${collection} moment`)
+    || `${collection} perspective`
 
-  const selectedDescriptor = seededPick(descriptors, seed, idx)
-  const seasonal = controls.style === 'More Seasonal' ? 'for Spring 2026' : seededPick(seasonalPhrases, seed, idx + 2)
-
-  const templates = [
-    `The Tommy Hilfiger ${product}. A ${selectedDescriptor} ${seasonal}.`,
-    `${talent || '@talent'} in the ${product}, ${campaignVerbs[(seed + idx) % campaignVerbs.length]} for ${collection}.`,
-    `The ${product}, a Tommy Hilfiger ${collection.toLowerCase()} staple.`,
-    `${talent || 'Talent'} ${seededPick(campaignVerbs, seed, idx + 1)} for ${collection} style.`,
-    `${titleCase(product)} with modern craftsmanship and timeless energy.`,
+  const editorialClosers = ['effortless style.', 'timeless energy.', 'classic Tommy pace.', 'heritage, remixed for now.']
+  const funnyRaceLines = [
+    `${eventPhrase}. Fast laps, effortless style.`,
+    `Trackside in ${location ? titleCase(location) : 'the city'}. Tommy classics keeping pace.`,
+    `Pole position energy for ${eventPhrase.toLowerCase()}.`,
+    'From the paddock to the afterparty.',
   ]
 
-  let caption = templates[idx % templates.length]
+  const eventFirstTemplates = [
+    `${eventPhrase}. ${seededPick(editorialClosers, seed, idx)}`,
+    `${location ? `Trackside in ${titleCase(location)}.` : 'Trackside perspective.'} ${talent || 'Tommy talent'} in the ${product}.`,
+    `${eventPhrase}. ${titleCase(product)} styled for on and off the track.`,
+    `${hasEvent ? 'From the paddock to the afterparty.' : `${collection}.`} ${titleCase(product)} with modern craftsmanship and timeless energy.`,
+  ]
 
-  if (controls.style === 'More Editorial') {
-    caption = caption.replace('.', ' —').replace('A ', '')
+  const productTemplates = [
+    `The Tommy Hilfiger ${product}. A modern essential for ${collection.toLowerCase()}.`,
+    `${talent || '@talent'} in the ${product}, setting the tone for ${collection}.`,
+    `The ${product}, a Tommy Hilfiger ${collection.toLowerCase()} staple.`,
+  ]
+
+  let caption = (hasEvent ? eventFirstTemplates : productTemplates)[idx % (hasEvent ? eventFirstTemplates.length : productTemplates.length)]
+
+  if (/(funny|playful)/i.test(moodText) && hasEvent) {
+    caption = funnyRaceLines[idx % funnyRaceLines.length]
+  }
+
+  if (notesRaw) {
+    const conciseNote = notesRaw.length > 70 ? `${notesRaw.slice(0, 70).trim()}…` : notesRaw
+    if (!caption.toLowerCase().includes(conciseNote.toLowerCase().slice(0, 18))) {
+      caption = `${caption} ${conciseNote}`
+    }
+  }
+
+  if (controls.style === 'More Product-Forward') {
+    caption = `${titleCase(product)} focus. ${caption}`
   }
   if (controls.style === 'More Celebrity-Led' && talent) {
-    caption = `${talent} in Tommy Hilfiger ${product}. ${seasonal.charAt(0).toUpperCase() + seasonal.slice(1)}.`
-  }
-  if (controls.style === 'More Product-Forward') {
-    caption = `The Tommy Hilfiger ${product}. ${titleCase(collection)} focus, ${seasonal}.`
+    caption = `${talent}. ${caption}`
   }
   if (controls.style === 'More Campaign-Led') {
-    caption = `${titleCase(collection)}. ${talent || 'Tommy Hilfiger talent'} ${seededPick(campaignVerbs, seed, idx + 4)} with the ${product}.`
+    caption = `${titleCase(collection)} campaign. ${caption}`
   }
 
-  if (controls.length === 'Short') caption = caption.split(/[.!?]/)[0] + '.'
-  if (controls.length === 'Slightly Extended') {
-    const addOn = notes.includes('cta') ? ' Discover more on tommy.com.' : ' Styled for on and off the schedule.'
-    caption += addOn
-  }
+  if (controls.length === 'Short') caption = caption.split(/[.!?]/).filter(Boolean).slice(0, 2).join('. ') + '.'
+  if (controls.length === 'Slightly Extended') caption += ' Styled for the moment and beyond.'
 
   const reasons = [
-    'Uses product-first structure',
-    'Matches Tommy sentence cadence',
-    'Includes seasonal framing',
-    'Reflects premium editorial tone',
-    'Uses Tommy-style vocabulary',
+    'Leads with event/cultural context before product',
+    'Reflects selected tone and editorial cadence',
+    'Uses location or occasion framing from the brief',
+    'Integrates notes/copy guidance directly',
+    'Keeps Tommy-style premium vocabulary',
   ]
 
   const watchouts = []
-  if (caption.length > 150) watchouts.push('Slightly too long')
-  if (/!|\?\?/.test(caption)) watchouts.push('Could feel too promotional')
-  if (/(lol|vibes|slay|omg|bestie)/i.test(caption)) watchouts.push('Too Gen Z-coded')
-  if ((caption.match(/emoji|🔥|✨|💙/g) || []).length > 1) watchouts.push('Too emoji-heavy')
+  if (caption.length > 160) watchouts.push('Slightly too long')
+  if (/!{2,}|\?\?/.test(caption)) watchouts.push('Could feel too promotional')
+  if (/(lol|vibes|slay|omg|bestie|meme)/i.test(caption)) watchouts.push('Too Gen Z-coded')
+  if ((caption.match(/[🔥✨💙😂🤣]/g) || []).length > 0) watchouts.push('Too emoji-heavy')
   if (/buy now|sale|shop now/i.test(caption)) watchouts.push('Too promotional')
 
-  const scoreBase = 95 - watchouts.length * 4 - Math.max(0, caption.length - 130) * 0.05
+  const scoreBase = 96 - watchouts.length * 4 - Math.max(0, caption.length - 135) * 0.05
   const score = Math.max(78, Math.min(97, Math.round(scoreBase)))
 
   return {
