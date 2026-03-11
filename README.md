@@ -22,8 +22,8 @@ npm run build
 Optional LLM mode (falls back automatically if missing):
 
 ```bash
-# .env
-VITE_OPENAI_API_KEY=your_api_key_here
+# Vercel project environment variable (server-side)
+OPENAI_API_KEY=your_api_key_here
 ```
 
 ## Demo walkthrough (2-3 minutes)

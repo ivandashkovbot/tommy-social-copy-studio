@@ -180,109 +180,34 @@ function buildCaption(brief, controls, idx) {
 }
 
 async function generateWithLLM(brief, controls, sampleCaptions) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) return { ok: false, reason: 'missing_key', data: null }
-
-  const examples = [...sampleCaptions.x.slice(0, 4), ...sampleCaptions.instagram.slice(0, 4)]
-    .slice(0, 8)
-    .map((x) => `- ${x}`)
-    .join('\n')
-
-  const prompt = `You are writing Tommy Hilfiger social captions.
-
-Tommy voice summary:
-- Editorial, polished, effortless, premium, seasonal, celebrity-aware.
-- Avoid slang, meme tone, emoji-heavy output.
-
-Tommy caption rules:
-- Prioritize event/cultural context, then tone, then location/context, then product.
-- Do not default to product-first every time.
-- Use short fashion-editorial cadence.
-- If mood is funny or playful, allow light wordplay (especially racing/event references) while staying premium.
-
-Observed vocabulary:
-heritage, classic, timeless, effortless, staple, spring, modern craftsmanship, style, look
-
-Recent Tommy examples:
-${examples}
-
-User brief:
-Platform: ${brief.platform}
-Collection/Story: ${brief.collectionCustom || brief.collection}
-Hero Product: ${brief.heroProductCustom || brief.heroProduct}
-Talent: ${brief.talent || 'none'}
-Content Type: ${brief.contentType}
-Objective: ${brief.objective}
-Mood: ${brief.mood}
-Copy notes: ${brief.notes || 'none'}
-Style preference: ${controls.style}
-Length: ${controls.length}
-
-Generate exactly ${Math.min(controls.outputCount, 5)} captions.
-Return ONLY a JSON array of strings, no markdown.`
-
-  const response = await fetch('https://api.openai.com/v1/responses', {
+  const response = await fetch('/api/generate-captions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: 'gpt-4.1-mini',
-      input: prompt,
-    }),
+    body: JSON.stringify({ brief, controls, sampleCaptions }),
   })
 
-  if (!response.ok) return { ok: false, reason: 'request_failed', data: null }
-  const data = await response.json()
-  const text = data.output_text || data.output?.map((o) => o.content?.map((c) => c.text).join(' ')).join(' ')
-  if (!text) return { ok: false, reason: 'empty_output', data: null }
-
-  const parseArray = (raw) => {
+  if (!response.ok) {
+    let reason = 'request_failed'
     try {
-      const parsed = JSON.parse(raw)
-      if (!Array.isArray(parsed)) return null
-      return parsed.filter((x) => typeof x === 'string')
+      const data = await response.json()
+      if (data?.reason) reason = data.reason
     } catch {
-      const match = raw.match(/\[[\s\S]*\]/)
-      if (!match) return null
-      try {
-        const rescued = JSON.parse(match[0])
-        return Array.isArray(rescued) ? rescued.filter((x) => typeof x === 'string') : null
-      } catch {
-        return null
-      }
+      // ignore parse errors
     }
+    return { ok: false, reason, data: null }
   }
 
-  let captions = parseArray(text)
-
-  if (!captions || !captions.length) {
-    const retryResponse = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        input: `${prompt}\n\nImportant retry instruction: Return strictly valid JSON array of strings only. No preface. No markdown.`,
-      }),
-    })
-
-    if (retryResponse.ok) {
-      const retryData = await retryResponse.json()
-      const retryText = retryData.output_text || retryData.output?.map((o) => o.content?.map((c) => c.text).join(' ')).join(' ')
-      captions = retryText ? parseArray(retryText) : null
-    }
+  const data = await response.json()
+  if (!Array.isArray(data?.captions) || !data.captions.length) {
+    return { ok: false, reason: 'parse_failed', data: null }
   }
-
-  if (!captions || !captions.length) return { ok: false, reason: 'parse_failed', data: null }
 
   return {
     ok: true,
     reason: null,
-    data: captions.map((x) => evaluateCaption(x.trim(), brief)),
+    data: data.captions.map((x) => evaluateCaption(String(x).trim(), brief)),
   }
 }
 
@@ -331,7 +256,7 @@ function App() {
 
       if (llmResult?.reason === 'missing_key') {
         setLlmStatus('missing_key')
-        setGenNotice('LLM mode needs VITE_OPENAI_API_KEY. Fell back to deterministic mode.')
+        setGenNotice('LLM mode needs OPENAI_API_KEY on the server. Fell back to deterministic mode.')
       } else {
         setLlmStatus('error')
         setGenNotice('LLM response could not be parsed reliably. Fell back to deterministic mode.')
@@ -499,7 +424,7 @@ function App() {
                 : 'Deterministic mode active'}
             </div>
             {controls.generationMode === 'LLM' && llmStatus === 'missing_key' && (
-              <p className="inline-hint">Set <code>VITE_OPENAI_API_KEY</code> in local <code>.env</code> and Vercel env vars, then redeploy.</p>
+              <p className="inline-hint">Set <code>OPENAI_API_KEY</code> in Vercel env vars (server-side), then redeploy.</p>
             )}
             <label>Caption Style<select value={controls.style} onChange={(e) => setControls({ ...controls, style: e.target.value })}>{styles.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Length<select value={controls.length} onChange={(e) => setControls({ ...controls, length: e.target.value })}>{lengths.map((o) => <option key={o}>{o}</option>)}</select></label>
