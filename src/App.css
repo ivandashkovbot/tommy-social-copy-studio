@@ -229,6 +229,20 @@ button.primary:hover {
   background: #162a5f;
 }
 
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.notice {
+  margin-top: 10px;
+  color: #7a2f34;
+  background: #fff3f4;
+  border: 1px solid #f0c7cb;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
 .toggle {
   display: flex;
   align-items: center;

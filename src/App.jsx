@@ -52,6 +52,7 @@ const initialControls = {
   length: 'Medium',
   outputCount: 5,
   randomize: false,
+  generationMode: 'Deterministic',
 }
 
 function hashSeed(text) {
@@ -73,6 +74,44 @@ function titleCase(input) {
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+function evaluateCaption(caption, brief) {
+  const notes = brief.notes.toLowerCase()
+  const text = caption.toLowerCase()
+  const reasons = []
+
+  if (/(race|grand prix|weekend|trackside|paddock|event|launch|miami)/i.test(text)) reasons.push('Leads with event/cultural context before product')
+  if (brief.mood && text.includes(brief.mood.toLowerCase().split(' ')[0])) reasons.push('Reflects selected tone and editorial cadence')
+  if (/(miami|paris|new york|london|milan|monaco|tokyo|trackside)/i.test(text)) reasons.push('Uses location or occasion framing from the brief')
+  if (notes && text.includes(notes.slice(0, Math.min(18, notes.length)))) reasons.push('Integrates notes/copy guidance directly')
+  if (/(heritage|classic|timeless|effortless|staple|modern craftsmanship|style|look)/i.test(text)) reasons.push('Keeps Tommy-style premium vocabulary')
+
+  const watchouts = []
+  if (caption.length > 160) watchouts.push('Slightly too long')
+  if (/!{2,}|\?\?/.test(caption)) watchouts.push('Could feel too promotional')
+  if (/(lol|vibes|slay|omg|bestie|meme)/i.test(caption)) watchouts.push('Too Gen Z-coded')
+  if ((caption.match(/[🔥✨💙😂🤣]/g) || []).length > 0) watchouts.push('Too emoji-heavy')
+  if (/buy now|sale|shop now/i.test(caption)) watchouts.push('Too promotional')
+  if (!/(race|grand prix|weekend|trackside|paddock|event|launch|miami)/i.test(text) && /event|f1|race|miami|weekend/i.test(notes)) {
+    watchouts.push('Could be off-brief on event context')
+  }
+
+  const reasonCountBonus = Math.min(5, reasons.length) * 1.5
+  const scoreBase = 90 + reasonCountBonus - watchouts.length * 4 - Math.max(0, caption.length - 135) * 0.05
+  const score = Math.max(72, Math.min(97, Math.round(scoreBase)))
+
+  return {
+    caption,
+    score,
+    reasons: reasons.length
+      ? reasons
+      : [
+        'Matches Tommy sentence cadence',
+        'Reflects premium editorial tone',
+      ],
+    watchouts,
+  }
 }
 
 function buildCaption(brief, controls, idx) {
@@ -131,42 +170,80 @@ function buildCaption(brief, controls, idx) {
     }
   }
 
-  if (controls.style === 'More Product-Forward') {
-    caption = `${titleCase(product)} focus. ${caption}`
-  }
-  if (controls.style === 'More Celebrity-Led' && talent) {
-    caption = `${talent}. ${caption}`
-  }
-  if (controls.style === 'More Campaign-Led') {
-    caption = `${titleCase(collection)} campaign. ${caption}`
-  }
-
+  if (controls.style === 'More Product-Forward') caption = `${titleCase(product)} focus. ${caption}`
+  if (controls.style === 'More Celebrity-Led' && talent) caption = `${talent}. ${caption}`
+  if (controls.style === 'More Campaign-Led') caption = `${titleCase(collection)} campaign. ${caption}`
   if (controls.length === 'Short') caption = caption.split(/[.!?]/).filter(Boolean).slice(0, 2).join('. ') + '.'
   if (controls.length === 'Slightly Extended') caption += ' Styled for the moment and beyond.'
 
-  const reasons = [
-    'Leads with event/cultural context before product',
-    'Reflects selected tone and editorial cadence',
-    'Uses location or occasion framing from the brief',
-    'Integrates notes/copy guidance directly',
-    'Keeps Tommy-style premium vocabulary',
-  ]
+  return evaluateCaption(caption, brief)
+}
 
-  const watchouts = []
-  if (caption.length > 160) watchouts.push('Slightly too long')
-  if (/!{2,}|\?\?/.test(caption)) watchouts.push('Could feel too promotional')
-  if (/(lol|vibes|slay|omg|bestie|meme)/i.test(caption)) watchouts.push('Too Gen Z-coded')
-  if ((caption.match(/[🔥✨💙😂🤣]/g) || []).length > 0) watchouts.push('Too emoji-heavy')
-  if (/buy now|sale|shop now/i.test(caption)) watchouts.push('Too promotional')
+async function generateWithLLM(brief, controls, sampleCaptions) {
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+  if (!apiKey) return null
 
-  const scoreBase = 96 - watchouts.length * 4 - Math.max(0, caption.length - 135) * 0.05
-  const score = Math.max(78, Math.min(97, Math.round(scoreBase)))
+  const examples = [...sampleCaptions.x.slice(0, 4), ...sampleCaptions.instagram.slice(0, 4)]
+    .slice(0, 8)
+    .map((x) => `- ${x}`)
+    .join('\n')
 
-  return {
-    caption,
-    score,
-    reasons,
-    watchouts,
+  const prompt = `You are writing Tommy Hilfiger social captions.
+
+Tommy voice summary:
+- Editorial, polished, effortless, premium, seasonal, celebrity-aware.
+- Avoid slang, meme tone, emoji-heavy output.
+
+Tommy caption rules:
+- Prioritize event/cultural context, then tone, then location/context, then product.
+- Do not default to product-first every time.
+- Use short fashion-editorial cadence.
+- If mood is funny or playful, allow light wordplay (especially racing/event references) while staying premium.
+
+Observed vocabulary:
+heritage, classic, timeless, effortless, staple, spring, modern craftsmanship, style, look
+
+Recent Tommy examples:
+${examples}
+
+User brief:
+Platform: ${brief.platform}
+Collection/Story: ${brief.collectionCustom || brief.collection}
+Hero Product: ${brief.heroProductCustom || brief.heroProduct}
+Talent: ${brief.talent || 'none'}
+Content Type: ${brief.contentType}
+Objective: ${brief.objective}
+Mood: ${brief.mood}
+Copy notes: ${brief.notes || 'none'}
+Style preference: ${controls.style}
+Length: ${controls.length}
+
+Generate exactly ${Math.min(controls.outputCount, 5)} captions.
+Return ONLY a JSON array of strings, no markdown.`
+
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4.1-mini',
+      input: prompt,
+    }),
+  })
+
+  if (!response.ok) return null
+  const data = await response.json()
+  const text = data.output_text || data.output?.map((o) => o.content?.map((c) => c.text).join(' ')).join(' ')
+  if (!text) return null
+
+  try {
+    const parsed = JSON.parse(text)
+    if (!Array.isArray(parsed)) return null
+    return parsed.filter((x) => typeof x === 'string').map((x) => evaluateCaption(x.trim(), brief))
+  } catch {
+    return null
   }
 }
 
@@ -175,6 +252,8 @@ function App() {
   const [brief, setBrief] = useState(initialBrief)
   const [controls, setControls] = useState(initialControls)
   const [output, setOutput] = useState([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [genNotice, setGenNotice] = useState('')
   const [sampleCaptions, setSampleCaptions] = useState(initialSampleCaptions)
   const [toneItems, setToneItems] = useState(['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'])
   const [structureItems, setStructureItems] = useState([
@@ -196,9 +275,23 @@ function App() {
     '[Product category] with modern craftsmanship and timeless energy.',
   ])
 
-  const generateCaptions = () => {
+  const generateCaptions = async () => {
+    setIsGenerating(true)
+    setGenNotice('')
+
+    if (controls.generationMode === 'LLM') {
+      const llmOutput = await generateWithLLM(brief, controls, sampleCaptions)
+      if (llmOutput && llmOutput.length) {
+        setOutput(llmOutput)
+        setIsGenerating(false)
+        return
+      }
+      setGenNotice('LLM unavailable or API key missing. Fell back to deterministic mode.')
+    }
+
     const next = Array.from({ length: controls.outputCount }, (_, idx) => buildCaption(brief, controls, idx))
     setOutput(next)
+    setIsGenerating(false)
   }
 
   const addListItem = (setter, label) => {
@@ -326,7 +419,7 @@ function App() {
 
         <section className="panel primary-panel">
           <h2 className="primary-title">Create Tommy Caption</h2>
-          <button className="primary full-btn top-cta" onClick={generateCaptions}>Generate Tommy Captions</button>
+          <button className="primary full-btn top-cta" onClick={generateCaptions} disabled={isGenerating}>{isGenerating ? 'Generating…' : 'Generate Tommy Captions'}</button>
           <div className="form-grid">
             <label>Platform<select value={brief.platform} onChange={(e) => setBrief({ ...brief, platform: e.target.value })}>{platforms.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Collection / Story<select value={brief.collection} onChange={(e) => setBrief({ ...brief, collection: e.target.value })}>{collections.map((o) => <option key={o}>{o}</option>)}</select></label>
@@ -348,11 +441,13 @@ function App() {
         <aside className="panel">
           <h2>Tommy Caption Output</h2>
           <div className="form-grid compact">
+            <label>Generation Mode<select value={controls.generationMode} onChange={(e) => setControls({ ...controls, generationMode: e.target.value })}><option>Deterministic</option><option>LLM</option></select></label>
             <label>Caption Style<select value={controls.style} onChange={(e) => setControls({ ...controls, style: e.target.value })}>{styles.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Length<select value={controls.length} onChange={(e) => setControls({ ...controls, length: e.target.value })}>{lengths.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Output Count<select value={controls.outputCount} onChange={(e) => setControls({ ...controls, outputCount: Number(e.target.value) })}>{[3, 5, 8].map((o) => <option key={o} value={o}>{o}</option>)}</select></label>
             <label className="toggle"><input type="checkbox" checked={controls.randomize} onChange={(e) => setControls({ ...controls, randomize: e.target.checked })} /> Randomize variants</label>
           </div>
+          {genNotice && <p className="notice">{genNotice}</p>}
           <div className="output-list">
             {output.length === 0 && <p className="muted">No captions yet. Generate to preview Tommy-aligned outputs.</p>}
             {output.map((item, idx) => (
