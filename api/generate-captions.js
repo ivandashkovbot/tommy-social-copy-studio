@@ -76,14 +76,22 @@ Return ONLY a JSON array of strings, no markdown.`
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini',
+        model: 'gpt-4o-mini',
         input: retry
           ? `${prompt}\n\nImportant retry instruction: Return strictly valid JSON array of strings only. No preface. No markdown.`
           : prompt,
       }),
     })
 
-    if (!response.ok) return { ok: false, reason: 'request_failed' }
+    if (!response.ok) {
+      let detail = ''
+      try {
+        detail = await response.text()
+      } catch {
+        detail = ''
+      }
+      return { ok: false, reason: 'request_failed', detail: `openai_${response.status}${detail ? `:${detail.slice(0, 160)}` : ''}` }
+    }
 
     const data = await response.json()
     const text = data.output_text || data.output?.map((o) => o.content?.map((c) => c.text).join(' ')).join(' ')
@@ -100,5 +108,5 @@ Return ONLY a JSON array of strings, no markdown.`
   const second = await callModel(true)
   if (second.ok) return res.status(200).json({ captions: second.captions })
 
-  return res.status(502).json({ reason: second.reason || first.reason || 'request_failed' })
+  return res.status(502).json({ reason: second.reason || first.reason || 'request_failed', detail: second.detail || first.detail || null })
 }

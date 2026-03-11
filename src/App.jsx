@@ -190,13 +190,15 @@ async function generateWithLLM(brief, controls, sampleCaptions) {
 
   if (!response.ok) {
     let reason = 'request_failed'
+    let detail = null
     try {
       const data = await response.json()
       if (data?.reason) reason = data.reason
+      if (data?.detail) detail = data.detail
     } catch {
       // ignore parse errors
     }
-    return { ok: false, reason, data: null }
+    return { ok: false, reason, detail, data: null }
   }
 
   const data = await response.json()
@@ -259,7 +261,8 @@ function App() {
         setGenNotice('LLM mode needs OPENAI_API_KEY on the server. Fell back to deterministic mode.')
       } else {
         setLlmStatus('error')
-        setGenNotice('LLM response could not be parsed reliably. Fell back to deterministic mode.')
+        const detail = llmResult?.detail ? ` (${llmResult.detail})` : ''
+        setGenNotice(`LLM response could not be parsed reliably. Fell back to deterministic mode.${detail}`)
       }
     } else {
       setLlmStatus('idle')
