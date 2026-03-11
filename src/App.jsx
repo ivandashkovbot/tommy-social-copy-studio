@@ -44,7 +44,7 @@ const initialBrief = {
   contentType: 'Talent Feature',
   objective: 'Engagement',
   mood: 'Polished',
-  notes: 'Keep copy concise and premium. Fashion editorial tone with seasonal framing.',
+  notes: 'The Tommy Hilfiger polo. A timeless spring staple with effortless energy.',
 }
 
 const initialControls = {
@@ -266,7 +266,7 @@ function App() {
             <label>Content Type<select value={brief.contentType} onChange={(e) => setBrief({ ...brief, contentType: e.target.value })}>{contentTypes.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Objective<select value={brief.objective} onChange={(e) => setBrief({ ...brief, objective: e.target.value })}>{objectives.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Mood<select value={brief.mood} onChange={(e) => setBrief({ ...brief, mood: e.target.value })}>{moods.map((o) => <option key={o}>{o}</option>)}</select></label>
-            <label className="full">Notes<textarea className="notes-input" rows="4" value={brief.notes} onChange={(e) => setBrief({ ...brief, notes: e.target.value })} placeholder="Optional guidance for tone, mood, or campaign context" /></label>
+            <label className="full">Copy<textarea className="notes-input" rows="4" value={brief.notes} onChange={(e) => setBrief({ ...brief, notes: e.target.value })} placeholder="Write your initial caption copy draft here" /></label>
           </div>
           <div className="actions">
             <button onClick={loadSampleData}>Load Tommy Sample Data</button>
