@@ -239,6 +239,29 @@ async function generateWithLLM(brief, controls, sampleCaptions) {
   }
 }
 
+function BrandMark({ asButton = false, onClick }) {
+  const Inner = (
+    <>
+      <span className="flag-mark" aria-hidden>
+        <span className="flag-navy" />
+        <span className="flag-white" />
+        <span className="flag-red" />
+      </span>
+      <span className="wordmark-text">TOMMY SOCIAL COPY STUDIO</span>
+    </>
+  )
+
+  if (asButton) {
+    return (
+      <button className="wordmark" onClick={onClick}>
+        {Inner}
+      </button>
+    )
+  }
+
+  return <div className="wordmark static">{Inner}</div>
+}
+
 function App() {
   const [showIntro, setShowIntro] = useState(true)
   const [brief, setBrief] = useState(initialBrief)
@@ -362,9 +385,7 @@ function App() {
     return (
       <main className="intro-shell">
         <header className="intro-header">
-          <button className="wordmark" onClick={() => setShowIntro(true)}>
-            TOMMY SOCIAL COPY STUDIO
-          </button>
+          <BrandMark asButton onClick={() => setShowIntro(true)} />
           <p className="subtitle">A concept for codifying Tommy Hilfiger’s social voice into an AI-assisted editorial workflow</p>
         </header>
         <section className="intro-card">
@@ -385,9 +406,7 @@ function App() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <button className="wordmark" onClick={() => setShowIntro(true)}>
-          TOMMY SOCIAL COPY STUDIO
-        </button>
+        <BrandMark asButton onClick={() => setShowIntro(true)} />
         <p className="subtitle">A concept for codifying Tommy Hilfiger’s social voice into an AI-assisted editorial workflow</p>
       </header>
 
