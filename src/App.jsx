@@ -181,7 +181,7 @@ function buildCaption(brief, controls, idx) {
 
 async function generateWithLLM(brief, controls, sampleCaptions) {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-  if (!apiKey) return null
+  if (!apiKey) return { ok: false, reason: 'missing_key', data: null }
 
   const examples = [...sampleCaptions.x.slice(0, 4), ...sampleCaptions.instagram.slice(0, 4)]
     .slice(0, 8)
@@ -233,17 +233,56 @@ Return ONLY a JSON array of strings, no markdown.`
     }),
   })
 
-  if (!response.ok) return null
+  if (!response.ok) return { ok: false, reason: 'request_failed', data: null }
   const data = await response.json()
   const text = data.output_text || data.output?.map((o) => o.content?.map((c) => c.text).join(' ')).join(' ')
-  if (!text) return null
+  if (!text) return { ok: false, reason: 'empty_output', data: null }
 
-  try {
-    const parsed = JSON.parse(text)
-    if (!Array.isArray(parsed)) return null
-    return parsed.filter((x) => typeof x === 'string').map((x) => evaluateCaption(x.trim(), brief))
-  } catch {
-    return null
+  const parseArray = (raw) => {
+    try {
+      const parsed = JSON.parse(raw)
+      if (!Array.isArray(parsed)) return null
+      return parsed.filter((x) => typeof x === 'string')
+    } catch {
+      const match = raw.match(/\[[\s\S]*\]/)
+      if (!match) return null
+      try {
+        const rescued = JSON.parse(match[0])
+        return Array.isArray(rescued) ? rescued.filter((x) => typeof x === 'string') : null
+      } catch {
+        return null
+      }
+    }
+  }
+
+  let captions = parseArray(text)
+
+  if (!captions || !captions.length) {
+    const retryResponse = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        input: `${prompt}\n\nImportant retry instruction: Return strictly valid JSON array of strings only. No preface. No markdown.`,
+      }),
+    })
+
+    if (retryResponse.ok) {
+      const retryData = await retryResponse.json()
+      const retryText = retryData.output_text || retryData.output?.map((o) => o.content?.map((c) => c.text).join(' ')).join(' ')
+      captions = retryText ? parseArray(retryText) : null
+    }
+  }
+
+  if (!captions || !captions.length) return { ok: false, reason: 'parse_failed', data: null }
+
+  return {
+    ok: true,
+    reason: null,
+    data: captions.map((x) => evaluateCaption(x.trim(), brief)),
   }
 }
 
@@ -254,6 +293,7 @@ function App() {
   const [output, setOutput] = useState([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [genNotice, setGenNotice] = useState('')
+  const [llmStatus, setLlmStatus] = useState('idle')
   const [sampleCaptions, setSampleCaptions] = useState(initialSampleCaptions)
   const [toneItems, setToneItems] = useState(['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'])
   const [structureItems, setStructureItems] = useState([
@@ -280,13 +320,24 @@ function App() {
     setGenNotice('')
 
     if (controls.generationMode === 'LLM') {
-      const llmOutput = await generateWithLLM(brief, controls, sampleCaptions)
-      if (llmOutput && llmOutput.length) {
-        setOutput(llmOutput)
+      setLlmStatus('checking')
+      const llmResult = await generateWithLLM(brief, controls, sampleCaptions)
+      if (llmResult?.ok && llmResult.data?.length) {
+        setOutput(llmResult.data)
+        setLlmStatus('connected')
         setIsGenerating(false)
         return
       }
-      setGenNotice('LLM unavailable or API key missing. Fell back to deterministic mode.')
+
+      if (llmResult?.reason === 'missing_key') {
+        setLlmStatus('missing_key')
+        setGenNotice('LLM mode needs VITE_OPENAI_API_KEY. Fell back to deterministic mode.')
+      } else {
+        setLlmStatus('error')
+        setGenNotice('LLM response could not be parsed reliably. Fell back to deterministic mode.')
+      }
+    } else {
+      setLlmStatus('idle')
     }
 
     const next = Array.from({ length: controls.outputCount }, (_, idx) => buildCaption(brief, controls, idx))
@@ -442,6 +493,14 @@ function App() {
           <h2>Tommy Caption Output</h2>
           <div className="form-grid compact">
             <label>Generation Mode<select value={controls.generationMode} onChange={(e) => setControls({ ...controls, generationMode: e.target.value })}><option>Deterministic</option><option>LLM</option></select></label>
+            <div className={`llm-badge ${llmStatus}`}>
+              {controls.generationMode === 'LLM'
+                ? (llmStatus === 'connected' ? 'LLM connected · gpt-4.1-mini' : llmStatus === 'checking' ? 'Checking LLM…' : llmStatus === 'missing_key' ? 'LLM missing API key' : llmStatus === 'error' ? 'LLM parse/retry failed' : 'LLM not yet tested')
+                : 'Deterministic mode active'}
+            </div>
+            {controls.generationMode === 'LLM' && llmStatus === 'missing_key' && (
+              <p className="inline-hint">Set <code>VITE_OPENAI_API_KEY</code> in local <code>.env</code> and Vercel env vars, then redeploy.</p>
+            )}
             <label>Caption Style<select value={controls.style} onChange={(e) => setControls({ ...controls, style: e.target.value })}>{styles.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Length<select value={controls.length} onChange={(e) => setControls({ ...controls, length: e.target.value })}>{lengths.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Output Count<select value={controls.outputCount} onChange={(e) => setControls({ ...controls, outputCount: Number(e.target.value) })}>{[3, 5, 8].map((o) => <option key={o} value={o}>{o}</option>)}</select></label>
