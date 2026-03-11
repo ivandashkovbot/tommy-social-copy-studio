@@ -50,10 +50,14 @@ async function callOpenAI({ prompt, retry }) {
 async function callOllama({ prompt, retry }) {
   const baseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434'
   const model = process.env.OLLAMA_MODEL || 'llama3.1:8b'
+  const proxyToken = process.env.OLLAMA_PROXY_TOKEN
+
+  const headers = { 'Content-Type': 'application/json' }
+  if (proxyToken) headers.Authorization = `Bearer ${proxyToken}`
 
   const response = await fetch(`${baseUrl}/api/generate`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       model,
       prompt: retry
@@ -85,6 +89,10 @@ export default async function handler(req, res) {
   if (!brief || !controls || !sampleCaptions) return res.status(400).json({ reason: 'bad_request' })
 
   const provider = (process.env.LLM_PROVIDER || 'openai').toLowerCase()
+
+  if (provider === 'ollama' && process.env.OLLAMA_REQUIRE_PROXY_TOKEN === 'true' && !process.env.OLLAMA_PROXY_TOKEN) {
+    return res.status(500).json({ reason: 'missing_proxy_token', provider })
+  }
 
   const examples = [...(sampleCaptions.x || []).slice(0, 4), ...(sampleCaptions.instagram || []).slice(0, 4)]
     .slice(0, 8)

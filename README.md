@@ -26,10 +26,17 @@ Optional LLM mode (falls back automatically if missing):
 LLM_PROVIDER=openai
 OPENAI_API_KEY=your_api_key_here
 
-# or local Ollama
+# or Ollama
 LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=llama3.1:8b
+# optional token contract when Ollama is behind a proxy
+OLLAMA_PROXY_TOKEN=change_me
+OLLAMA_REQUIRE_PROXY_TOKEN=true
+
+# optional site password gate (HTTP Basic Auth via middleware)
+SITE_BASIC_AUTH_USER=demo
+SITE_BASIC_AUTH_PASS=change_me
 ```
 
 ## Demo walkthrough (2-3 minutes)
