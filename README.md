@@ -22,8 +22,14 @@ npm run build
 Optional LLM mode (falls back automatically if missing):
 
 ```bash
-# Vercel project environment variable (server-side)
+# Server-side env vars (Vercel or local server runtime)
+LLM_PROVIDER=openai
 OPENAI_API_KEY=your_api_key_here
+
+# or local Ollama
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.1:8b
 ```
 
 ## Demo walkthrough (2-3 minutes)
@@ -32,7 +38,7 @@ OPENAI_API_KEY=your_api_key_here
 2. Enter the studio and review **Recent Tommy Voice Patterns** (left column):
    - Tommy sample captions (X + Instagram)
    - Voice profile (tone, structure, vocabulary, templates)
-3. In **New Tommy Post Brief** (center):
+3. In **Create Tommy Caption** (center):
    - Load sample data
    - Adjust platform, collection/story, hero product, talent, mood, and notes
 4. In **Tommy Caption Output** (right):

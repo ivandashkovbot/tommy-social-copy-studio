@@ -209,6 +209,7 @@ async function generateWithLLM(brief, controls, sampleCaptions) {
   return {
     ok: true,
     reason: null,
+    provider: data.provider || 'llm',
     data: data.captions.map((x) => evaluateCaption(String(x).trim(), brief)),
   }
 }
@@ -221,6 +222,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [genNotice, setGenNotice] = useState('')
   const [llmStatus, setLlmStatus] = useState('idle')
+  const [llmProviderLabel, setLlmProviderLabel] = useState('LLM')
   const [sampleCaptions, setSampleCaptions] = useState(initialSampleCaptions)
   const [toneItems, setToneItems] = useState(['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'])
   const [structureItems, setStructureItems] = useState([
@@ -251,6 +253,7 @@ function App() {
       const llmResult = await generateWithLLM(brief, controls, sampleCaptions)
       if (llmResult?.ok && llmResult.data?.length) {
         setOutput(llmResult.data)
+        setLlmProviderLabel((llmResult.provider || 'LLM').toUpperCase())
         setLlmStatus('connected')
         setIsGenerating(false)
         return
@@ -423,11 +426,11 @@ function App() {
             <label>Generation Mode<select value={controls.generationMode} onChange={(e) => setControls({ ...controls, generationMode: e.target.value })}><option>Deterministic</option><option>LLM</option></select></label>
             <div className={`llm-badge ${llmStatus}`}>
               {controls.generationMode === 'LLM'
-                ? (llmStatus === 'connected' ? 'LLM connected · gpt-4.1-mini' : llmStatus === 'checking' ? 'Checking LLM…' : llmStatus === 'missing_key' ? 'LLM missing API key' : llmStatus === 'error' ? 'LLM parse/retry failed' : 'LLM not yet tested')
+                ? (llmStatus === 'connected' ? `LLM connected · ${llmProviderLabel}` : llmStatus === 'checking' ? 'Checking LLM…' : llmStatus === 'missing_key' ? 'LLM missing API key' : llmStatus === 'error' ? 'LLM parse/retry failed' : 'LLM not yet tested')
                 : 'Deterministic mode active'}
             </div>
             {controls.generationMode === 'LLM' && llmStatus === 'missing_key' && (
-              <p className="inline-hint">Set <code>OPENAI_API_KEY</code> in Vercel env vars (server-side), then redeploy.</p>
+              <p className="inline-hint">Set server env vars: <code>LLM_PROVIDER</code>=openai with <code>OPENAI_API_KEY</code>, or <code>LLM_PROVIDER</code>=ollama with <code>OLLAMA_BASE_URL</code>.</p>
             )}
             <label>Caption Style<select value={controls.style} onChange={(e) => setControls({ ...controls, style: e.target.value })}>{styles.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Length<select value={controls.length} onChange={(e) => setControls({ ...controls, length: e.target.value })}>{lengths.map((o) => <option key={o}>{o}</option>)}</select></label>
