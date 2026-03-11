@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 
 const initialSampleCaptions = {
@@ -54,6 +54,31 @@ const initialControls = {
   randomize: false,
   generationMode: 'Deterministic',
 }
+
+const createDefaultProfile = () => ({
+  id: 'recent-tommy',
+  name: 'Recent Tommy Voice Patterns',
+  sampleCaptions: initialSampleCaptions,
+  toneItems: ['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'],
+  structureItems: [
+    'Short sentences',
+    'Frequent sentence fragments',
+    'Product-first phrasing',
+    'Seasonal framing',
+    'Talent tagging',
+    'Minimal slang',
+    'Soft CTA language',
+  ],
+  vocabItems: ['heritage', 'classic', 'timeless', 'effortless', 'staple', 'spring', 'modern craftsmanship', 'style', 'look'],
+  templateItems: [
+    'The Tommy Hilfiger [product]. A [descriptor] for [season].',
+    '@[talent] in the [product].',
+    'The [product], a Tommy Hilfiger [season] staple.',
+    '[Talent] setting the tone for [season/style].',
+    '[Product category] with modern craftsmanship and timeless energy.',
+  ],
+  locked: true,
+})
 
 function hashSeed(text) {
   let hash = 0
@@ -223,26 +248,19 @@ function App() {
   const [genNotice, setGenNotice] = useState('')
   const [llmStatus, setLlmStatus] = useState('idle')
   const [llmProviderLabel, setLlmProviderLabel] = useState('LLM')
-  const [sampleCaptions, setSampleCaptions] = useState(initialSampleCaptions)
-  const [toneItems, setToneItems] = useState(['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'])
-  const [structureItems, setStructureItems] = useState([
-    'Short sentences',
-    'Frequent sentence fragments',
-    'Product-first phrasing',
-    'Seasonal framing',
-    'Talent tagging',
-    'Minimal slang',
-    'Soft CTA language',
-  ])
+  const [voiceProfiles, setVoiceProfiles] = useState([createDefaultProfile()])
+  const [selectedProfileId, setSelectedProfileId] = useState('recent-tommy')
 
-  const [vocabItems, setVocabItems] = useState(['heritage', 'classic', 'timeless', 'effortless', 'staple', 'spring', 'modern craftsmanship', 'style', 'look'])
-  const [templateItems, setTemplateItems] = useState([
-    'The Tommy Hilfiger [product]. A [descriptor] for [season].',
-    '@[talent] in the [product].',
-    'The [product], a Tommy Hilfiger [season] staple.',
-    '[Talent] setting the tone for [season/style].',
-    '[Product category] with modern craftsmanship and timeless energy.',
-  ])
+  const selectedProfile = voiceProfiles.find((profile) => profile.id === selectedProfileId) || voiceProfiles[0]
+  const sampleCaptions = selectedProfile.sampleCaptions
+  const toneItems = selectedProfile.toneItems
+  const structureItems = selectedProfile.structureItems
+  const vocabItems = selectedProfile.vocabItems
+  const templateItems = selectedProfile.templateItems
+
+  const updateSelectedProfile = (updater) => {
+    setVoiceProfiles((prev) => prev.map((profile) => (profile.id === selectedProfile.id ? updater(profile) : profile)))
+  }
 
   const generateCaptions = async () => {
     setIsGenerating(true)
@@ -276,38 +294,51 @@ function App() {
     setIsGenerating(false)
   }
 
-  const addListItem = (setter, label) => {
+  const addListItem = (field, label) => {
     const value = window.prompt(`Add item to ${label}`)
     if (!value || !value.trim()) return
-    setter((prev) => [...prev, value.trim()])
+    updateSelectedProfile((profile) => ({ ...profile, [field]: [...profile[field], value.trim()] }))
   }
 
-  const deleteListItem = (setter, indexToDelete) => {
-    setter((prev) => prev.filter((_, index) => index !== indexToDelete))
+  const deleteListItem = (field, indexToDelete) => {
+    updateSelectedProfile((profile) => ({ ...profile, [field]: profile[field].filter((_, index) => index !== indexToDelete) }))
+  }
+
+  const addVoiceProfile = () => {
+    const name = window.prompt('Name for new voice profile')
+    if (!name || !name.trim()) return
+    const id = `profile-${Date.now()}`
+    const profile = {
+      id,
+      name: name.trim(),
+      sampleCaptions: { x: [], instagram: [] },
+      toneItems: [],
+      structureItems: [],
+      vocabItems: [],
+      templateItems: [],
+      locked: false,
+    }
+    setVoiceProfiles((prev) => [...prev, profile])
+    setSelectedProfileId(id)
+  }
+
+  const deleteVoiceProfile = () => {
+    if (selectedProfile.locked) return
+    if (!window.confirm(`Delete profile "${selectedProfile.name}"?`)) return
+    setVoiceProfiles((prev) => prev.filter((profile) => profile.id !== selectedProfile.id))
+    setSelectedProfileId('recent-tommy')
   }
 
   const loadSampleData = () => {
     setBrief(initialBrief)
     setControls(initialControls)
-    setSampleCaptions(initialSampleCaptions)
-    setToneItems(['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'])
-    setStructureItems([
-      'Short sentences',
-      'Frequent sentence fragments',
-      'Product-first phrasing',
-      'Seasonal framing',
-      'Talent tagging',
-      'Minimal slang',
-      'Soft CTA language',
-    ])
-    setVocabItems(['heritage', 'classic', 'timeless', 'effortless', 'staple', 'spring', 'modern craftsmanship', 'style', 'look'])
-    setTemplateItems([
-      'The Tommy Hilfiger [product]. A [descriptor] for [season].',
-      '@[talent] in the [product].',
-      'The [product], a Tommy Hilfiger [season] staple.',
-      '[Talent] setting the tone for [season/style].',
-      '[Product category] with modern craftsmanship and timeless energy.',
-    ])
+    updateSelectedProfile((profile) => ({
+      ...profile,
+      ...createDefaultProfile(),
+      id: profile.id,
+      name: profile.name,
+      locked: profile.locked,
+    }))
     generateCaptions()
   }
 
@@ -362,39 +393,54 @@ function App() {
 
       <section className="grid">
         <aside className="panel">
-          <h2>Recent Tommy Voice Patterns</h2>
+          <h2>Voice Pattern Library</h2>
+          <div className="actions">
+            <select value={selectedProfileId} onChange={(e) => setSelectedProfileId(e.target.value)}>
+              {voiceProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+            </select>
+            <button onClick={addVoiceProfile}>Add Pattern</button>
+            {!selectedProfile.locked && <button onClick={deleteVoiceProfile}>Delete Pattern</button>}
+          </div>
           <div className="section">
-            <div className="section-head"><h3>Sample Captions (X)</h3><button onClick={() => addListItem((updater) => setSampleCaptions((prev) => ({ ...prev, x: updater(prev.x) })), 'Sample Captions (X)')}>Add</button></div>
+            <div className="section-head"><h3>Sample Captions (X)</h3><button onClick={() => {
+              const value = window.prompt('Add item to Sample Captions (X)')
+              if (!value || !value.trim()) return
+              updateSelectedProfile((profile) => ({ ...profile, sampleCaptions: { ...profile.sampleCaptions, x: [...profile.sampleCaptions.x, value.trim()] } }))
+            }}>Add</button></div>
             <ul>
               {sampleCaptions.x.map((item, index) => (
                 <li key={`${item}-${index}`} className="editable-item">
                   <span>{item}</span>
-                  <button className="icon-btn" onClick={() => setSampleCaptions((prev) => ({ ...prev, x: prev.x.filter((_, i) => i !== index) }))}>Delete</button>
+                  <button className="icon-btn" onClick={() => updateSelectedProfile((profile) => ({ ...profile, sampleCaptions: { ...profile.sampleCaptions, x: profile.sampleCaptions.x.filter((_, i) => i !== index) } }))}>Delete</button>
                 </li>
               ))}
             </ul>
           </div>
           <div className="section">
-            <div className="section-head"><h3>Sample Captions (Instagram)</h3><button onClick={() => addListItem((updater) => setSampleCaptions((prev) => ({ ...prev, instagram: updater(prev.instagram) })), 'Sample Captions (Instagram)')}>Add</button></div>
+            <div className="section-head"><h3>Sample Captions (Instagram)</h3><button onClick={() => {
+              const value = window.prompt('Add item to Sample Captions (Instagram)')
+              if (!value || !value.trim()) return
+              updateSelectedProfile((profile) => ({ ...profile, sampleCaptions: { ...profile.sampleCaptions, instagram: [...profile.sampleCaptions.instagram, value.trim()] } }))
+            }}>Add</button></div>
             <ul>
               {sampleCaptions.instagram.map((item, index) => (
                 <li key={`${item}-${index}`} className="editable-item">
                   <span>{item}</span>
-                  <button className="icon-btn" onClick={() => setSampleCaptions((prev) => ({ ...prev, instagram: prev.instagram.filter((_, i) => i !== index) }))}>Delete</button>
+                  <button className="icon-btn" onClick={() => updateSelectedProfile((profile) => ({ ...profile, sampleCaptions: { ...profile.sampleCaptions, instagram: profile.sampleCaptions.instagram.filter((_, i) => i !== index) } }))}>Delete</button>
                 </li>
               ))}
             </ul>
           </div>
           <div className="section">
-            <h3>Tommy Voice Profile</h3>
-            <p className="section-head"><strong>Tone</strong><button onClick={() => addListItem(setToneItems, 'Tone')}>Add</button></p>
-            <ul>{toneItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setToneItems, index)}>Delete</button></li>)}</ul>
-            <p className="section-head"><strong>Structure</strong><button onClick={() => addListItem(setStructureItems, 'Structure')}>Add</button></p>
-            <ul>{structureItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setStructureItems, index)}>Delete</button></li>)}</ul>
-            <p className="section-head"><strong>Signature Vocabulary</strong><button onClick={() => addListItem(setVocabItems, 'Signature Vocabulary')}>Add</button></p>
-            <ul>{vocabItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setVocabItems, index)}>Delete</button></li>)}</ul>
-            <p className="section-head"><strong>Common Tommy Caption Templates</strong><button onClick={() => addListItem(setTemplateItems, 'Common Tommy Caption Templates')}>Add</button></p>
-            <ol>{templateItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setTemplateItems, index)}>Delete</button></li>)}</ol>
+            <h3>{selectedProfile.name}</h3>
+            <p className="section-head"><strong>Tone</strong><button onClick={() => addListItem('toneItems', 'Tone')}>Add</button></p>
+            <ul>{toneItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem('toneItems', index)}>Delete</button></li>)}</ul>
+            <p className="section-head"><strong>Structure</strong><button onClick={() => addListItem('structureItems', 'Structure')}>Add</button></p>
+            <ul>{structureItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem('structureItems', index)}>Delete</button></li>)}</ul>
+            <p className="section-head"><strong>Signature Vocabulary</strong><button onClick={() => addListItem('vocabItems', 'Signature Vocabulary')}>Add</button></p>
+            <ul>{vocabItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem('vocabItems', index)}>Delete</button></li>)}</ul>
+            <p className="section-head"><strong>Common Tommy Caption Templates</strong><button onClick={() => addListItem('templateItems', 'Common Tommy Caption Templates')}>Add</button></p>
+            <ol>{templateItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem('templateItems', index)}>Delete</button></li>)}</ol>
             <p className="note">Observed voice: social captions written like fashion editorial headlines.</p>
           </div>
         </aside>
