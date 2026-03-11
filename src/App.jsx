@@ -163,19 +163,14 @@ function App() {
     'Soft CTA language',
   ])
 
-  const voiceProfile = useMemo(
-    () => ({
-      vocab: ['heritage', 'classic', 'timeless', 'effortless', 'staple', 'spring', 'modern craftsmanship', 'style', 'look'],
-      templates: [
-        'The Tommy Hilfiger [product]. A [descriptor] for [season].',
-        '@[talent] in the [product].',
-        'The [product], a Tommy Hilfiger [season] staple.',
-        '[Talent] setting the tone for [season/style].',
-        '[Product category] with modern craftsmanship and timeless energy.',
-      ],
-    }),
-    [],
-  )
+  const [vocabItems, setVocabItems] = useState(['heritage', 'classic', 'timeless', 'effortless', 'staple', 'spring', 'modern craftsmanship', 'style', 'look'])
+  const [templateItems, setTemplateItems] = useState([
+    'The Tommy Hilfiger [product]. A [descriptor] for [season].',
+    '@[talent] in the [product].',
+    'The [product], a Tommy Hilfiger [season] staple.',
+    '[Talent] setting the tone for [season/style].',
+    '[Product category] with modern craftsmanship and timeless energy.',
+  ])
 
   const generateCaptions = () => {
     const next = Array.from({ length: controls.outputCount }, (_, idx) => buildCaption(brief, controls, idx))
@@ -205,6 +200,14 @@ function App() {
       'Talent tagging',
       'Minimal slang',
       'Soft CTA language',
+    ])
+    setVocabItems(['heritage', 'classic', 'timeless', 'effortless', 'staple', 'spring', 'modern craftsmanship', 'style', 'look'])
+    setTemplateItems([
+      'The Tommy Hilfiger [product]. A [descriptor] for [season].',
+      '@[talent] in the [product].',
+      'The [product], a Tommy Hilfiger [season] staple.',
+      '[Talent] setting the tone for [season/style].',
+      '[Product category] with modern craftsmanship and timeless energy.',
     ])
     generateCaptions()
   }
@@ -289,10 +292,10 @@ function App() {
             <ul>{toneItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setToneItems, index)}>Delete</button></li>)}</ul>
             <p className="section-head"><strong>Structure</strong><button onClick={() => addListItem(setStructureItems, 'Structure')}>Add</button></p>
             <ul>{structureItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setStructureItems, index)}>Delete</button></li>)}</ul>
-            <p><strong>Signature Vocabulary</strong></p>
-            <ul>{voiceProfile.vocab.map((v) => <li key={v}>{v}</li>)}</ul>
-            <p><strong>Common Tommy Caption Templates</strong></p>
-            <ol>{voiceProfile.templates.map((v) => <li key={v}>{v}</li>)}</ol>
+            <p className="section-head"><strong>Signature Vocabulary</strong><button onClick={() => addListItem(setVocabItems, 'Signature Vocabulary')}>Add</button></p>
+            <ul>{vocabItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setVocabItems, index)}>Delete</button></li>)}</ul>
+            <p className="section-head"><strong>Common Tommy Caption Templates</strong><button onClick={() => addListItem(setTemplateItems, 'Common Tommy Caption Templates')}>Add</button></p>
+            <ol>{templateItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setTemplateItems, index)}>Delete</button></li>)}</ol>
             <p className="note">Observed voice: social captions written like fashion editorial headlines.</p>
           </div>
         </aside>
