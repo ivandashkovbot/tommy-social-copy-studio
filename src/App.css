@@ -128,6 +128,28 @@ button {
   margin-top: 12px;
 }
 
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.editable-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.icon-btn {
+  border-color: #b8c4df;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 ul,
 ol {
   margin-top: 8px;

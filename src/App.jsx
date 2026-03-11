@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import './App.css'
 
-const sampleCaptions = {
+const initialSampleCaptions = {
   x: [
     'first race is in the books on track with @CodySimpson at the Australian Grand Prix',
     'the Tommy Hilfiger classics, remixed for spring with the one and only MGK @machinegunkelly',
@@ -151,11 +151,20 @@ function App() {
   const [brief, setBrief] = useState(initialBrief)
   const [controls, setControls] = useState(initialControls)
   const [output, setOutput] = useState([])
+  const [sampleCaptions, setSampleCaptions] = useState(initialSampleCaptions)
+  const [toneItems, setToneItems] = useState(['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'])
+  const [structureItems, setStructureItems] = useState([
+    'Short sentences',
+    'Frequent sentence fragments',
+    'Product-first phrasing',
+    'Seasonal framing',
+    'Talent tagging',
+    'Minimal slang',
+    'Soft CTA language',
+  ])
 
   const voiceProfile = useMemo(
     () => ({
-      tone: ['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'],
-      structure: ['Short sentences', 'Frequent sentence fragments', 'Product-first phrasing', 'Seasonal framing', 'Talent tagging', 'Minimal slang', 'Soft CTA language'],
       vocab: ['heritage', 'classic', 'timeless', 'effortless', 'staple', 'spring', 'modern craftsmanship', 'style', 'look'],
       templates: [
         'The Tommy Hilfiger [product]. A [descriptor] for [season].',
@@ -173,9 +182,30 @@ function App() {
     setOutput(next)
   }
 
+  const addListItem = (setter, label) => {
+    const value = window.prompt(`Add item to ${label}`)
+    if (!value || !value.trim()) return
+    setter((prev) => [...prev, value.trim()])
+  }
+
+  const deleteListItem = (setter, indexToDelete) => {
+    setter((prev) => prev.filter((_, index) => index !== indexToDelete))
+  }
+
   const loadSampleData = () => {
     setBrief(initialBrief)
     setControls(initialControls)
+    setSampleCaptions(initialSampleCaptions)
+    setToneItems(['Editorial', 'Polished', 'Effortless', 'Premium', 'Seasonal', 'Celebrity-led'])
+    setStructureItems([
+      'Short sentences',
+      'Frequent sentence fragments',
+      'Product-first phrasing',
+      'Seasonal framing',
+      'Talent tagging',
+      'Minimal slang',
+      'Soft CTA language',
+    ])
     generateCaptions()
   }
 
@@ -232,19 +262,33 @@ function App() {
         <aside className="panel">
           <h2>Recent Tommy Voice Patterns</h2>
           <div className="section">
-            <h3>Sample Captions (X)</h3>
-            <ul>{sampleCaptions.x.map((item) => <li key={item}>{item}</li>)}</ul>
+            <div className="section-head"><h3>Sample Captions (X)</h3><button onClick={() => addListItem((updater) => setSampleCaptions((prev) => ({ ...prev, x: updater(prev.x) })), 'Sample Captions (X)')}>Add</button></div>
+            <ul>
+              {sampleCaptions.x.map((item, index) => (
+                <li key={`${item}-${index}`} className="editable-item">
+                  <span>{item}</span>
+                  <button className="icon-btn" onClick={() => setSampleCaptions((prev) => ({ ...prev, x: prev.x.filter((_, i) => i !== index) }))}>Delete</button>
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="section">
-            <h3>Sample Captions (Instagram)</h3>
-            <ul>{sampleCaptions.instagram.map((item) => <li key={item}>{item}</li>)}</ul>
+            <div className="section-head"><h3>Sample Captions (Instagram)</h3><button onClick={() => addListItem((updater) => setSampleCaptions((prev) => ({ ...prev, instagram: updater(prev.instagram) })), 'Sample Captions (Instagram)')}>Add</button></div>
+            <ul>
+              {sampleCaptions.instagram.map((item, index) => (
+                <li key={`${item}-${index}`} className="editable-item">
+                  <span>{item}</span>
+                  <button className="icon-btn" onClick={() => setSampleCaptions((prev) => ({ ...prev, instagram: prev.instagram.filter((_, i) => i !== index) }))}>Delete</button>
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="section">
             <h3>Tommy Voice Profile</h3>
-            <p><strong>Tone</strong></p>
-            <ul>{voiceProfile.tone.map((v) => <li key={v}>{v}</li>)}</ul>
-            <p><strong>Structure</strong></p>
-            <ul>{voiceProfile.structure.map((v) => <li key={v}>{v}</li>)}</ul>
+            <p className="section-head"><strong>Tone</strong><button onClick={() => addListItem(setToneItems, 'Tone')}>Add</button></p>
+            <ul>{toneItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setToneItems, index)}>Delete</button></li>)}</ul>
+            <p className="section-head"><strong>Structure</strong><button onClick={() => addListItem(setStructureItems, 'Structure')}>Add</button></p>
+            <ul>{structureItems.map((v, index) => <li key={`${v}-${index}`} className="editable-item"><span>{v}</span><button className="icon-btn" onClick={() => deleteListItem(setStructureItems, index)}>Delete</button></li>)}</ul>
             <p><strong>Signature Vocabulary</strong></p>
             <ul>{voiceProfile.vocab.map((v) => <li key={v}>{v}</li>)}</ul>
             <p><strong>Common Tommy Caption Templates</strong></p>
