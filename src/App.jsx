@@ -253,8 +253,9 @@ function App() {
           </div>
         </aside>
 
-        <section className="panel">
-          <h2>New Tommy Post Brief</h2>
+        <section className="panel primary-panel">
+          <h2 className="primary-title">Create Tommy Caption</h2>
+          <button className="primary full-btn top-cta" onClick={generateCaptions}>Generate Tommy Captions</button>
           <div className="form-grid">
             <label>Platform<select value={brief.platform} onChange={(e) => setBrief({ ...brief, platform: e.target.value })}>{platforms.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Collection / Story<select value={brief.collection} onChange={(e) => setBrief({ ...brief, collection: e.target.value })}>{collections.map((o) => <option key={o}>{o}</option>)}</select></label>
@@ -265,12 +266,11 @@ function App() {
             <label>Content Type<select value={brief.contentType} onChange={(e) => setBrief({ ...brief, contentType: e.target.value })}>{contentTypes.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Objective<select value={brief.objective} onChange={(e) => setBrief({ ...brief, objective: e.target.value })}>{objectives.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Mood<select value={brief.mood} onChange={(e) => setBrief({ ...brief, mood: e.target.value })}>{moods.map((o) => <option key={o}>{o}</option>)}</select></label>
-            <label className="full">Notes<textarea rows="4" value={brief.notes} onChange={(e) => setBrief({ ...brief, notes: e.target.value })} /></label>
+            <label className="full">Notes<textarea className="notes-input" rows="4" value={brief.notes} onChange={(e) => setBrief({ ...brief, notes: e.target.value })} placeholder="Optional guidance for tone, mood, or campaign context" /></label>
           </div>
           <div className="actions">
             <button onClick={loadSampleData}>Load Tommy Sample Data</button>
             <button onClick={resetBrief}>Reset Brief</button>
-            <button className="primary" onClick={generateCaptions}>Generate Example Captions</button>
           </div>
         </section>
 
@@ -282,8 +282,6 @@ function App() {
             <label>Output Count<select value={controls.outputCount} onChange={(e) => setControls({ ...controls, outputCount: Number(e.target.value) })}>{[3, 5, 8].map((o) => <option key={o} value={o}>{o}</option>)}</select></label>
             <label className="toggle"><input type="checkbox" checked={controls.randomize} onChange={(e) => setControls({ ...controls, randomize: e.target.checked })} /> Randomize variants</label>
           </div>
-          <button className="primary full-btn" onClick={generateCaptions}>Generate Tommy Captions</button>
-
           <div className="output-list">
             {output.length === 0 && <p className="muted">No captions yet. Generate to preview Tommy-aligned outputs.</p>}
             {output.map((item, idx) => (

@@ -70,7 +70,7 @@ body {
 
 .grid {
   display: grid;
-  grid-template-columns: 1.1fr 1fr 1fr;
+  grid-template-columns: 0.95fr 1.25fr 0.95fr;
   gap: 16px;
   align-items: start;
 }
@@ -80,6 +80,17 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 20px;
+}
+
+.primary-panel {
+  background: #f5f7fc;
+  border: 1.5px solid #c7d2ea;
+  box-shadow: 0 8px 28px rgba(16, 30, 66, 0.08);
+}
+
+.primary-title {
+  font-size: 1.7rem;
+  margin-bottom: 8px;
 }
 
 h1,
@@ -92,6 +103,7 @@ h3 {
 
 h2 {
   margin-bottom: 14px;
+  font-size: 1.35rem;
 }
 
 h3 {
@@ -200,6 +212,18 @@ button.primary:hover {
 .full-btn {
   width: 100%;
   margin-top: 8px;
+}
+
+.top-cta {
+  margin: 4px 0 14px;
+  padding: 10px 14px;
+  font-weight: 600;
+}
+
+.notes-input {
+  min-height: 96px;
+  border: 1.5px solid #b8c4df;
+  background: #f9fbff;
 }
 
 .output-list {
