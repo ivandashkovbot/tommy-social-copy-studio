@@ -74,7 +74,7 @@ const createDefaultProfile = () => ({
 
 const createMiamiNightsProfile = () => ({
   id: 'miami-nights',
-  name: 'Miami Nights / Paddock Social',
+  name: 'New Tommy Voice',
   sampleCaptions: {
     x: [
       'Some nights require better outfits.',
