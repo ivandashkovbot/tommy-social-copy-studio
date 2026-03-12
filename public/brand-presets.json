@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "presets": [
+    {
+      "id": "gen-z",
+      "name": "Gen Z Copy",
+      "tone": ["playful", "confident", "culturally-aware", "informal"],
+      "sentenceStyle": "short-choppy",
+      "hookFormula": "hot_take_or_pov",
+      "vocabulary": ["real talk", "lowkey", "highkey", "let's be honest", "not gonna lie"],
+      "avoid": ["corporate buzzwords", "stiff grammar", "long formal intros"],
+      "emojiPolicy": { "level": "medium", "max": 3, "allowed": ["🫡", "✨", "👀", "🔥"] },
+      "ctaStyle": "conversational",
+      "formatting": ["lowercase-ok", "one-liners", "fragments-ok"],
+      "defaults": {
+        "intensity": 72,
+        "clarity": 68,
+        "energy": 85,
+        "ctaStrength": "soft",
+        "riskFilter": "balanced"
+      }
+    },
+    {
+      "id": "tech-founder",
+      "name": "Tech Founder Copy",
+      "tone": ["clear", "visionary", "pragmatic", "evidence-backed"],
+      "sentenceStyle": "medium-clean",
+      "hookFormula": "problem_insight_thesis",
+      "vocabulary": ["leverage", "iteration", "distribution", "signal", "compounding"],
+      "avoid": ["hustle cringe", "vague inspiration", "empty platitudes"],
+      "emojiPolicy": { "level": "low", "max": 1, "allowed": ["⚙️", "📈", "🧠"] },
+      "ctaStyle": "intellectual-invite",
+      "formatting": ["clean paragraphs", "occasional bullets", "specific claims"],
+      "defaults": {
+        "intensity": 58,
+        "clarity": 82,
+        "energy": 60,
+        "ctaStrength": "soft",
+        "riskFilter": "conservative"
+      }
+    },
+    {
+      "id": "prestige-brand",
+      "name": "Prestige Brand Copy",
+      "tone": ["refined", "understated", "deliberate", "confident"],
+      "sentenceStyle": "short-medium-spacious",
+      "hookFormula": "sensory_or_value_led",
+      "vocabulary": ["crafted", "considered", "timeless", "elevated", "signature"],
+      "avoid": ["slang", "hype language", "urgency spam", "exclamation overload"],
+      "emojiPolicy": { "level": "off", "max": 0, "allowed": [] },
+      "ctaStyle": "subtle",
+      "formatting": ["clean lines", "minimal punctuation", "polished finish"],
+      "defaults": {
+        "intensity": 46,
+        "clarity": 74,
+        "energy": 36,
+        "ctaStrength": "none",
+        "riskFilter": "conservative"
+      }
+    }
+  ]
+}

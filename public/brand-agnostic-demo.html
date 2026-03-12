@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brand-Agnostic Social Copy Creator Demo</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: Inter, system-ui, sans-serif; margin: 0; background: #0d1220; color: #e8eefc; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .card { background: #141b2e; border: 1px solid #2a375d; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+    h1, h2, h3 { margin: 0 0 10px; }
+    .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { font-size: 13px; display: grid; gap: 6px; }
+    input, textarea, select { width: 100%; border-radius: 8px; border: 1px solid #3a4a74; background: #0e162a; color: #e8eefc; padding: 10px; }
+    textarea { min-height: 80px; resize: vertical; }
+    button { border: 0; background: #2f65ff; color: white; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+    button.secondary { background: #2b344f; }
+    .muted { color: #9fb0d8; font-size: 13px; }
+    .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #223159; font-size: 12px; margin: 2px 4px 0 0; }
+    .variant { border: 1px solid #31456f; border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #0f172b; }
+    pre { white-space: pre-wrap; font-size: 12px; background: #0c1323; border: 1px solid #263456; border-radius: 8px; padding: 12px; }
+    @media (max-width: 900px){ .grid, .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Brand-Agnostic Social Copy Creator (Demo)</h1>
+    <p class="muted">Separate from Tommy version. Includes presets + prompt template preview.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Brief</h2>
+        <div class="row">
+          <label>Brand name <input id="brand" value="Northline" /></label>
+          <label>Audience <input id="audience" value="young professionals" /></label>
+          <label>Offer/Product <input id="offer" value="commuter backpack" /></label>
+          <label>Objective
+            <select id="objective">
+              <option>Awareness</option>
+              <option>Engagement</option>
+              <option>Launch</option>
+              <option>Conversion</option>
+            </select>
+          </label>
+          <label>Platform
+            <select id="platform">
+              <option>X</option>
+              <option>Instagram</option>
+              <option>LinkedIn</option>
+            </select>
+          </label>
+          <label>Preset
+            <select id="preset"></select>
+          </label>
+        </div>
+        <label>Key details
+          <textarea id="details">Water-resistant shell, hidden laptop sleeve, minimalist design, city-friendly silhouette.</textarea>
+        </label>
+
+        <h3 style="margin-top:12px;">Controls</h3>
+        <div class="row">
+          <label>Intensity (0-100) <input id="intensity" type="number" min="0" max="100" /></label>
+          <label>Clarity (0-100) <input id="clarity" type="number" min="0" max="100" /></label>
+          <label>Energy (0-100) <input id="energy" type="number" min="0" max="100" /></label>
+          <label>Emoji
+            <select id="emojiLevel"><option>off</option><option>low</option><option>medium</option></select>
+          </label>
+          <label>CTA strength
+            <select id="cta"><option>none</option><option>soft</option><option>direct</option></select>
+          </label>
+          <label>Risk filter
+            <select id="risk"><option>conservative</option><option>balanced</option><option>edgy</option></select>
+          </label>
+          <label>Output count
+            <select id="count"><option>3</option><option selected>5</option></select>
+          </label>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button id="generate">Generate demo copy</button>
+          <button class="secondary" id="viewPrompt">Show system prompt payload</button>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2>Preset Snapshot</h2>
+        <div id="presetView"></div>
+      </aside>
+    </div>
+
+    <section class="card">
+      <h2>Output variants</h2>
+      <div id="output" class="muted">Generate to preview outputs.</div>
+    </section>
+
+    <section class="card">
+      <h2>System prompt payload preview</h2>
+      <pre id="promptPreview" class="muted">Click "Show system prompt payload".</pre>
+    </section>
+  </div>
+
+  <script>
+    const presetSelect = document.getElementById('preset')
+    const presetView = document.getElementById('presetView')
+    const outputEl = document.getElementById('output')
+    const promptPreview = document.getElementById('promptPreview')
+    let presetData
+
+    function pick(arr, i){ return arr[i % arr.length] }
+
+    function renderPreset(p){
+      presetView.innerHTML = `
+        <p><strong>${p.name}</strong></p>
+        <p>${p.tone.map(t => `<span class="pill">${t}</span>`).join('')}</p>
+        <p><strong>Vocabulary:</strong> ${p.vocabulary.join(', ')}</p>
+        <p><strong>Avoid:</strong> ${p.avoid.join(', ')}</p>
+        <p><strong>Hook:</strong> ${p.hookFormula}</p>
+        <p><strong>CTA style:</strong> ${p.ctaStyle}</p>
+      `
+      document.getElementById('intensity').value = p.defaults.intensity
+      document.getElementById('clarity').value = p.defaults.clarity
+      document.getElementById('energy').value = p.defaults.energy
+      document.getElementById('cta').value = p.defaults.ctaStrength
+      document.getElementById('risk').value = p.defaults.riskFilter
+      document.getElementById('emojiLevel').value = p.emojiPolicy.level
+    }
+
+    function buildVariant(ctx, p, i){
+      const hooks = {
+        hot_take_or_pov: [
+          `POV: ${ctx.offer} finally got smarter.`,
+          `Hot take: most ${ctx.offer}s are overbuilt.`,
+          `real talk: you feel the difference on day one.`
+        ],
+        problem_insight_thesis: [
+          `Most ${ctx.offer} options optimize specs, not daily flow.`,
+          `The bottleneck isn't storage. It's friction.`,
+          `Better tools compound better days.`
+        ],
+        sensory_or_value_led: [
+          `Crafted for movement. Considered in every line.`,
+          `A quieter kind of confidence.`,
+          `Designed to endure, styled to belong.`
+        ]
+      }
+
+      const ctaMap = {
+        none: '',
+        soft: pick(['Thoughts?', 'Would you wear this daily?', 'Curious how you’d style it.'], i),
+        direct: pick(['Explore the collection.', 'See details now.', 'Shop the drop.'], i)
+      }
+
+      const vocab = pick(p.vocabulary, i)
+      const emoji = ctx.emojiLevel === 'medium' ? pick(p.emojiPolicy.allowed.length ? p.emojiPolicy.allowed : ['✨'], i) : (ctx.emojiLevel === 'low' ? '✨' : '')
+      const lineA = pick(hooks[p.hookFormula] || hooks.problem_insight_thesis, i)
+      const lineB = `${ctx.brand} ${ctx.offer}: ${vocab} design for ${ctx.audience}.`
+      const lineC = `${ctx.details.split(',')[i % Math.max(1, ctx.details.split(',').length)].trim()}.`
+      const tail = ctaMap[ctx.cta]
+      return [lineA, lineB, lineC, `${tail}${emoji ? ' ' + emoji : ''}`].filter(Boolean).join(' ')
+    }
+
+    function getCtx(){
+      const selected = presetData.presets.find(x => x.id === presetSelect.value)
+      return {
+        brand: document.getElementById('brand').value.trim(),
+        audience: document.getElementById('audience').value.trim(),
+        offer: document.getElementById('offer').value.trim(),
+        objective: document.getElementById('objective').value,
+        platform: document.getElementById('platform').value,
+        details: document.getElementById('details').value.trim(),
+        intensity: Number(document.getElementById('intensity').value),
+        clarity: Number(document.getElementById('clarity').value),
+        energy: Number(document.getElementById('energy').value),
+        emojiLevel: document.getElementById('emojiLevel').value,
+        cta: document.getElementById('cta').value,
+        risk: document.getElementById('risk').value,
+        count: Number(document.getElementById('count').value),
+        preset: selected,
+      }
+    }
+
+    function buildPromptPayload(ctx){
+      return {
+        brandName: ctx.brand,
+        audience: ctx.audience,
+        offer: ctx.offer,
+        objective: ctx.objective,
+        platform: ctx.platform,
+        details: ctx.details,
+        presetJson: ctx.preset,
+        controls: {
+          intensity: ctx.intensity,
+          clarity: ctx.clarity,
+          energy: ctx.energy,
+          emojiLevel: ctx.emojiLevel,
+          ctaStrength: ctx.cta,
+          riskFilter: ctx.risk
+        },
+        outputCount: ctx.count
+      }
+    }
+
+    async function init(){
+      const res = await fetch('/brand-presets.json')
+      presetData = await res.json()
+      presetData.presets.forEach(p => {
+        const opt = document.createElement('option')
+        opt.value = p.id
+        opt.textContent = p.name
+        presetSelect.appendChild(opt)
+      })
+      presetSelect.value = 'gen-z'
+      renderPreset(presetData.presets[0])
+    }
+
+    presetSelect.addEventListener('change', () => {
+      const p = presetData.presets.find(x => x.id === presetSelect.value)
+      renderPreset(p)
+    })
+
+    document.getElementById('generate').addEventListener('click', () => {
+      const ctx = getCtx()
+      const list = Array.from({ length: ctx.count }, (_, i) => ({
+        text: buildVariant(ctx, ctx.preset, i),
+        hookType: ctx.preset.hookFormula,
+        ctaType: ctx.cta,
+        notes: [
+          `Matches ${ctx.preset.name} tone`,
+          `Uses ${ctx.preset.hookFormula} opening style`,
+          `Respects CTA: ${ctx.cta}`
+        ]
+      }))
+      outputEl.innerHTML = list.map((v, i) => `
+        <article class="variant">
+          <p><strong>Variant ${i+1}</strong></p>
+          <p>${v.text}</p>
+          <p class="muted">${v.notes.join(' • ')}</p>
+        </article>
+      `).join('')
+    })
+
+    document.getElementById('viewPrompt').addEventListener('click', () => {
+      const payload = buildPromptPayload(getCtx())
+      promptPreview.textContent = JSON.stringify(payload, null, 2)
+    })
+
+    init()
+  </script>
+</body>
+</html>

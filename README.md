@@ -5,6 +5,11 @@
 This prototype is a Tommy-specific internal concept demo for social teams.
 It showcases how observed Tommy caption patterns can be translated into a structured, guided workflow for drafting new social copy.
 
+It now also includes a separate **brand-agnostic demo** with reusable presets:
+- Gen Z Copy
+- Tech Founder Copy
+- Prestige Brand Copy
+
 ## Run locally
 
 ```bash
@@ -18,6 +23,16 @@ Build check:
 ```bash
 npm run build
 ```
+
+Brand-agnostic demo URL (when dev server is running):
+
+```text
+http://localhost:5173/brand-agnostic-demo.html
+```
+
+Supporting assets:
+- `/brand-presets.json`
+- `/system-prompt-template.md`
 
 Optional LLM mode (falls back automatically if missing):
 
