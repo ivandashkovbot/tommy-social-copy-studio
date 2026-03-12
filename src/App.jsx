@@ -72,6 +72,48 @@ const createDefaultProfile = () => ({
   locked: true,
 })
 
+const createMiamiNightsProfile = () => ({
+  id: 'miami-nights',
+  name: 'Miami Nights / Paddock Social',
+  sampleCaptions: {
+    x: [
+      'Some nights require better outfits.',
+      'Outfits that make plans happen.',
+      'Dress like you have plans.',
+      'The night starts with the outfit.',
+      'From the paddock to the afterparty.',
+      'Miami nights hit different in Tommy.',
+      'When the lights go out, the fits show up.',
+      'Race day. Dress accordingly.',
+      'The paddock has a dress code.',
+      'Paddock approved.',
+      'The plan? Look good first. Go from there.',
+      'When the fit does the talking.',
+    ],
+    instagram: [
+      'Some nights require better outfits.',
+      'Outfits that make plans happen.',
+      'Dress like you have plans.',
+      'The night starts with the outfit.',
+      'Miami nights hit different in Tommy.',
+      'The fastest weekend of the year deserves better outfits.',
+      'The heritage polo, now in Miami mode.',
+      'Miami nights, Tommy classics.',
+      'Miami race weekend. Dress like you might end up on a yacht.',
+      'The paddock has a dress code.',
+      'Paddock approved.',
+      'Main character wardrobe.',
+      'The plan? Look good first. Go from there.',
+      'When the fit does the talking.',
+    ],
+  },
+  toneItems: ['Social first', 'confident', 'playful', 'stylish', 'effortless', 'socially aware', 'Playful but controlled', 'Never try-hard', 'Sharp', 'Witty', 'Gen z'],
+  structureItems: ['Moment → Style', 'Location → Outfit', 'Event → Fashion payoff', 'Location → Outfit'],
+  vocabItems: ['heritage', 'classic', 'timeless', 'effortless', 'pace', 'fast', 'weekend', 'party', 'night', 'coast', 'club', 'scene'],
+  templateItems: ['[Short style statement].', '[Location]. [Tommy product or style].', '[Event or moment]. [Fashion payoff].', 'The [product]. [Cultural or seasonal payoff].'],
+  locked: false,
+})
+
 function hashSeed(text) {
   let hash = 0
   for (let i = 0; i < text.length; i += 1) {
@@ -263,7 +305,7 @@ function App() {
   const [genNotice, setGenNotice] = useState('')
   const [llmStatus, setLlmStatus] = useState('idle')
   const [llmProviderLabel, setLlmProviderLabel] = useState('LLM')
-  const [voiceProfiles, setVoiceProfiles] = useState([createDefaultProfile()])
+  const [voiceProfiles, setVoiceProfiles] = useState([createDefaultProfile(), createMiamiNightsProfile()])
   const [selectedProfileId, setSelectedProfileId] = useState('recent-tommy')
 
   const selectedProfile = voiceProfiles.find((profile) => profile.id === selectedProfileId) || voiceProfiles[0]
