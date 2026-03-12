@@ -238,13 +238,13 @@ function buildCaption(brief, controls, idx) {
   return evaluateCaption(caption, brief)
 }
 
-async function generateWithLLM(brief, controls, sampleCaptions) {
+async function generateWithLLM(brief, controls, sampleCaptions, selectedProfileName) {
   const response = await fetch('/api/generate-captions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ brief, controls, sampleCaptions }),
+    body: JSON.stringify({ brief, controls, sampleCaptions, selectedProfileName }),
   })
 
   if (!response.ok) {
@@ -324,7 +324,7 @@ function App() {
     setGenNotice('')
     setLlmStatus('checking')
 
-    const llmResult = await generateWithLLM(brief, controls, sampleCaptions)
+    const llmResult = await generateWithLLM(brief, controls, sampleCaptions, selectedProfile?.name)
     if (llmResult?.ok && llmResult.data?.length) {
       setOutput(llmResult.data)
       setLlmProviderLabel((llmResult.provider || 'LLM').toUpperCase())

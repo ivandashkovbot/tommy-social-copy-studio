@@ -87,7 +87,7 @@ async function callOllama({ prompt, retry }) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ reason: 'method_not_allowed' })
 
-  const { brief, controls, sampleCaptions } = req.body || {}
+  const { brief, controls, sampleCaptions, selectedProfileName } = req.body || {}
   if (!brief || !controls || !sampleCaptions) return res.status(400).json({ reason: 'bad_request' })
 
   const provider = env('LLM_PROVIDER', 'openai').toLowerCase()
@@ -101,6 +101,21 @@ export default async function handler(req, res) {
     .map((x) => `- ${x}`)
     .join('\n')
 
+  const isNewTommyVoice = String(selectedProfileName || '').toLowerCase().includes('new tommy voice')
+
+  const profileDirective = isNewTommyVoice
+    ? `Profile-specific direction (New Tommy Voice):
+- Social-first, not editorial-first.
+- Start with a moment hook (event, location, vibe) in line one.
+- Keep line length punchy (roughly 8-12 words when possible).
+- Prefer quick cadence, playful confidence, and culturally current phrasing.
+- Gen Z-friendly energy is allowed, but avoid cringe slang/memes/emojis.
+- Use lines like: "paddock approved", "fits show up", "main character wardrobe", "look good first" when natural.
+- Keep it premium and brand-safe.`
+    : `Profile-specific direction (Recent Tommy Voice Patterns):
+- Keep editorial polish and premium cadence as primary style.
+- Product/style language can be more refined and classic.`
+
   const prompt = `You are writing Tommy Hilfiger social captions.
 
 Tommy voice summary:
@@ -113,6 +128,8 @@ Tommy caption rules:
 - Use short fashion-editorial cadence.
 - If mood is funny or playful, allow light wordplay (especially racing/event references) while staying premium.
 
+${profileDirective}
+
 Observed vocabulary:
 heritage, classic, timeless, effortless, staple, spring, modern craftsmanship, style, look
 
@@ -120,6 +137,7 @@ Recent Tommy examples:
 ${examples}
 
 User brief:
+Selected profile: ${selectedProfileName || 'Recent Tommy Voice Patterns'}
 Collection/Story: ${brief.collectionCustom || brief.collection}
 Hero Product Input: ${brief.heroProductInput || 'none'}
 Talent: ${brief.talent || 'none'}
