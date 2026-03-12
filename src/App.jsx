@@ -390,7 +390,8 @@ function App() {
       name: profile.name,
       locked: profile.locked,
     }))
-    generateCaptions()
+    setOutput([])
+    setGenNotice('')
   }
 
   const resetBrief = () => {
