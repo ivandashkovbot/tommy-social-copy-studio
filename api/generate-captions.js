@@ -120,12 +120,10 @@ Recent Tommy examples:
 ${examples}
 
 User brief:
-Platform: ${brief.platform}
 Collection/Story: ${brief.collectionCustom || brief.collection}
-Hero Product: ${brief.heroProductCustom || brief.heroProduct}
+Hero Product Input: ${brief.heroProductInput || 'none'}
 Talent: ${brief.talent || 'none'}
 Content Type: ${brief.contentType}
-Objective: ${brief.objective}
 Mood: ${brief.mood}
 Copy notes: ${brief.notes || 'none'}
 Style preference: ${controls.style}

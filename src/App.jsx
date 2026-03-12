@@ -26,23 +26,17 @@ const initialSampleCaptions = {
 }
 
 const collections = ['Spring 2026', 'Heritage Classics', 'Modern Prep', 'Eyewear', 'Watches & Jewelry', 'Motorsport']
-const heroProducts = ['polo', 'trench', 'blazer', 'eyewear', 'watch', 'jewelry']
 const contentTypes = ['Product Highlight', 'Talent Feature', 'Campaign Post', 'Seasonal Style', 'Event / Culture Moment']
-const objectives = ['Brand Awareness', 'Engagement', 'Product Focus']
 const moods = ['Effortless', 'Classic', 'Modern', 'Polished', 'Energetic', 'Funny', 'Playful']
-const platforms = ['Instagram', 'X', 'TikTok', 'Threads']
 const styles = ['Core Tommy', 'More Editorial', 'More Celebrity-Led', 'More Product-Forward', 'More Seasonal', 'More Campaign-Led']
 const lengths = ['Short', 'Medium', 'Slightly Extended']
 
 const initialBrief = {
-  platform: 'Instagram',
   collection: 'Spring 2026',
   collectionCustom: '',
-  heroProduct: 'polo',
-  heroProductCustom: '',
+  heroProductInput: 'polo',
   talent: '@patrickschwarzenegger',
   contentType: 'Talent Feature',
-  objective: 'Engagement',
   mood: 'Polished',
   notes: 'The Tommy Hilfiger polo. A timeless spring staple with effortless energy.',
 }
@@ -51,8 +45,6 @@ const initialControls = {
   style: 'Core Tommy',
   length: 'Medium',
   outputCount: 5,
-  randomize: false,
-  generationMode: 'Deterministic',
 }
 
 const createDefaultProfile = () => ({
@@ -288,32 +280,26 @@ function App() {
   const generateCaptions = async () => {
     setIsGenerating(true)
     setGenNotice('')
+    setLlmStatus('checking')
 
-    if (controls.generationMode === 'LLM') {
-      setLlmStatus('checking')
-      const llmResult = await generateWithLLM(brief, controls, sampleCaptions)
-      if (llmResult?.ok && llmResult.data?.length) {
-        setOutput(llmResult.data)
-        setLlmProviderLabel((llmResult.provider || 'LLM').toUpperCase())
-        setLlmStatus('connected')
-        setIsGenerating(false)
-        return
-      }
-
-      if (llmResult?.reason === 'missing_key') {
-        setLlmStatus('missing_key')
-        setGenNotice('LLM mode needs OPENAI_API_KEY on the server. Fell back to deterministic mode.')
-      } else {
-        setLlmStatus('error')
-        const detail = llmResult?.detail ? ` (${llmResult.detail})` : ''
-        setGenNotice(`LLM response could not be parsed reliably. Fell back to deterministic mode.${detail}`)
-      }
-    } else {
-      setLlmStatus('idle')
+    const llmResult = await generateWithLLM(brief, controls, sampleCaptions)
+    if (llmResult?.ok && llmResult.data?.length) {
+      setOutput(llmResult.data)
+      setLlmProviderLabel((llmResult.provider || 'LLM').toUpperCase())
+      setLlmStatus('connected')
+      setIsGenerating(false)
+      return
     }
 
-    const next = Array.from({ length: controls.outputCount }, (_, idx) => buildCaption(brief, controls, idx))
-    setOutput(next)
+    if (llmResult?.reason === 'missing_key') {
+      setLlmStatus('missing_key')
+      setGenNotice('LLM needs server env credentials/config before generating.')
+    } else {
+      setLlmStatus('error')
+      const detail = llmResult?.detail ? ` (${llmResult.detail})` : ''
+      setGenNotice(`LLM request failed.${detail}`)
+    }
+
     setIsGenerating(false)
   }
 
@@ -367,14 +353,11 @@ function App() {
 
   const resetBrief = () => {
     setBrief({
-      platform: 'Instagram',
       collection: 'Spring 2026',
       collectionCustom: '',
-      heroProduct: 'polo',
-      heroProductCustom: '',
+      heroProductInput: '',
       talent: '',
       contentType: 'Product Highlight',
-      objective: 'Brand Awareness',
       mood: 'Effortless',
       notes: '',
     })
@@ -466,18 +449,15 @@ function App() {
 
         <section className="panel primary-panel">
           <h2 className="primary-title">Create Tommy Caption</h2>
+          <label className="full">Copy<textarea className="notes-input" rows="4" value={brief.notes} onChange={(e) => setBrief({ ...brief, notes: e.target.value })} placeholder="Write your initial caption copy draft here" /></label>
           <button className="primary full-btn top-cta" onClick={generateCaptions} disabled={isGenerating}>{isGenerating ? 'Generating…' : 'Generate Tommy Captions'}</button>
           <div className="form-grid">
-            <label>Platform<select value={brief.platform} onChange={(e) => setBrief({ ...brief, platform: e.target.value })}>{platforms.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Collection / Story<select value={brief.collection} onChange={(e) => setBrief({ ...brief, collection: e.target.value })}>{collections.map((o) => <option key={o}>{o}</option>)}</select></label>
-            <label>Collection Custom Input<input value={brief.collectionCustom} onChange={(e) => setBrief({ ...brief, collectionCustom: e.target.value })} placeholder="Optional custom collection" /></label>
-            <label>Hero Product<select value={brief.heroProduct} onChange={(e) => setBrief({ ...brief, heroProduct: e.target.value })}>{heroProducts.map((o) => <option key={o}>{o}</option>)}</select></label>
-            <label>Hero Product Custom Input<input value={brief.heroProductCustom} onChange={(e) => setBrief({ ...brief, heroProductCustom: e.target.value })} placeholder="Optional custom product" /></label>
+            <label>Collection Input<input value={brief.collectionCustom} onChange={(e) => setBrief({ ...brief, collectionCustom: e.target.value })} placeholder="Optional custom collection" /></label>
+            <label>Hero Product Input<input value={brief.heroProductInput} onChange={(e) => setBrief({ ...brief, heroProductInput: e.target.value })} placeholder="e.g. white polo" /></label>
             <label>Talent (optional)<input value={brief.talent} onChange={(e) => setBrief({ ...brief, talent: e.target.value })} placeholder="@talent" /></label>
             <label>Content Type<select value={brief.contentType} onChange={(e) => setBrief({ ...brief, contentType: e.target.value })}>{contentTypes.map((o) => <option key={o}>{o}</option>)}</select></label>
-            <label>Objective<select value={brief.objective} onChange={(e) => setBrief({ ...brief, objective: e.target.value })}>{objectives.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Mood<select value={brief.mood} onChange={(e) => setBrief({ ...brief, mood: e.target.value })}>{moods.map((o) => <option key={o}>{o}</option>)}</select></label>
-            <label className="full">Copy<textarea className="notes-input" rows="4" value={brief.notes} onChange={(e) => setBrief({ ...brief, notes: e.target.value })} placeholder="Write your initial caption copy draft here" /></label>
           </div>
           <div className="actions">
             <button onClick={loadSampleData}>Load Tommy Sample Data</button>
@@ -488,19 +468,15 @@ function App() {
         <aside className="panel">
           <h2>Tommy Caption Output</h2>
           <div className="form-grid compact">
-            <label>Generation Mode<select value={controls.generationMode} onChange={(e) => setControls({ ...controls, generationMode: e.target.value })}><option>Deterministic</option><option>LLM</option></select></label>
             <div className={`llm-badge ${llmStatus}`}>
-              {controls.generationMode === 'LLM'
-                ? (llmStatus === 'connected' ? `LLM connected · ${llmProviderLabel}` : llmStatus === 'checking' ? 'Checking LLM…' : llmStatus === 'missing_key' ? 'LLM missing API key' : llmStatus === 'error' ? 'LLM parse/retry failed' : 'LLM not yet tested')
-                : 'Deterministic mode active'}
+              {llmStatus === 'connected' ? `LLM connected · ${llmProviderLabel}` : llmStatus === 'checking' ? 'Checking LLM…' : llmStatus === 'missing_key' ? 'LLM missing API key' : llmStatus === 'error' ? 'LLM request failed' : 'LLM ready'}
             </div>
-            {controls.generationMode === 'LLM' && llmStatus === 'missing_key' && (
+            {llmStatus === 'missing_key' && (
               <p className="inline-hint">Set server env vars: <code>LLM_PROVIDER</code>=openai with <code>OPENAI_API_KEY</code>, or <code>LLM_PROVIDER</code>=ollama with <code>OLLAMA_BASE_URL</code>.</p>
             )}
             <label>Caption Style<select value={controls.style} onChange={(e) => setControls({ ...controls, style: e.target.value })}>{styles.map((o) => <option key={o}>{o}</option>)}</select></label>
             <label>Length<select value={controls.length} onChange={(e) => setControls({ ...controls, length: e.target.value })}>{lengths.map((o) => <option key={o}>{o}</option>)}</select></label>
-            <label>Output Count<select value={controls.outputCount} onChange={(e) => setControls({ ...controls, outputCount: Number(e.target.value) })}>{[3, 5, 8].map((o) => <option key={o} value={o}>{o}</option>)}</select></label>
-            <label className="toggle"><input type="checkbox" checked={controls.randomize} onChange={(e) => setControls({ ...controls, randomize: e.target.checked })} /> Randomize variants</label>
+            <label>Output Count<select value={controls.outputCount} onChange={(e) => setControls({ ...controls, outputCount: Number(e.target.value) })}>{[3, 5].map((o) => <option key={o} value={o}>{o}</option>)}</select></label>
           </div>
           {genNotice && <p className="notice">{genNotice}</p>}
           <div className="output-list">
