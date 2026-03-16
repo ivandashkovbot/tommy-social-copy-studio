@@ -278,7 +278,7 @@ function BrandMark({ asButton = false, onClick }) {
     <>
       <img
         className="brand-logo"
-        src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Tommy_Hilfiger_logo.svg/512px-Tommy_Hilfiger_logo.svg.png"
+        src="/tommy-logo.png"
         alt="Tommy Hilfiger"
       />
       <span className="wordmark-text">SOCIAL COPY STUDIO</span>
