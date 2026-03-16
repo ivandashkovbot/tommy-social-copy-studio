@@ -105,13 +105,25 @@ export default async function handler(req, res) {
 
   const profileDirective = isNewTommyVoice
     ? `Profile-specific direction (New Tommy Voice):
-- Social-first, not editorial-first.
-- Start with a moment hook (event, location, vibe) in line one.
-- Keep line length punchy (roughly 8-12 words when possible).
-- Prefer quick cadence, playful confidence, and culturally current phrasing.
-- Gen Z-friendly energy is allowed, but avoid cringe slang/memes/emojis.
-- Use lines like: "paddock approved", "fits show up", "main character wardrobe", "look good first" when natural.
-- Keep it premium and brand-safe.`
+- Social-first, thumb-stopping, and interactive.
+- Be edgier and more conversation-starting while still premium and brand-safe.
+- Start with a hook built for feed interruption (challenge, POV, question, bold statement).
+- Prefer punchy, short lines (roughly 4-10 words). 1-2 lines max.
+- Use interactive formats more often: questions, dares, prompts, "you/your" framing.
+- Prioritize nightlife, paddock energy, race-weekend momentum, afterparty cues.
+- Allow playful Gen Z-friendly confidence, but avoid cringe slang, memes, or emojis.
+
+Hard avoid patterns (do NOT mimic Recent Tommy editorial voice):
+- Avoid product-first openings like "The [product]...".
+- Avoid formal catalog/editorial cadence and polished campaign-headline tone.
+- Avoid overusing words like "timeless", "heritage", "classic layer", "modern craftsmanship" unless explicitly requested.
+- Avoid safe generic luxury phrasing with no social hook.
+
+Desired examples of energy (not exact copy):
+- "Race weekend. Outfit first, plans second."
+- "Paddock energy. Who said yes to this fit?"
+- "Miami after dark. Dress like you mean it."
+- "You’re not underdressed, right?"`
     : `Profile-specific direction (Recent Tommy Voice Patterns):
 - Keep editorial polish and premium cadence as primary style.
 - Product/style language can be more refined and classic.`
