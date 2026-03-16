@@ -276,12 +276,12 @@ async function generateWithLLM(brief, controls, sampleCaptions, selectedProfileN
 function BrandMark({ asButton = false, onClick }) {
   const Inner = (
     <>
-      <span className="flag-mark" aria-hidden>
-        <span className="flag-navy" />
-        <span className="flag-white" />
-        <span className="flag-red" />
-      </span>
-      <span className="wordmark-text">TOMMY SOCIAL COPY STUDIO</span>
+      <img
+        className="brand-logo"
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Tommy_Hilfiger_logo.svg/512px-Tommy_Hilfiger_logo.svg.png"
+        alt="Tommy Hilfiger"
+      />
+      <span className="wordmark-text">SOCIAL COPY STUDIO</span>
     </>
   )
 

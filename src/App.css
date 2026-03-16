@@ -46,16 +46,13 @@ body {
 .wordmark.static { cursor: default; }
 .wordmark-text { letter-spacing: 0.09em; font-size: 12px; font-weight: 700; }
 
-.flag-mark {
-  display: inline-grid;
-  grid-template-columns: 16px 10px 16px;
-  height: 12px;
-  border: 1px solid #cfd6e6;
-  overflow: hidden;
+.brand-logo {
+  height: 14px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  filter: saturate(1.05) contrast(1.02);
 }
-.flag-navy { background: var(--navy); }
-.flag-white { background: #fff; }
-.flag-red { background: var(--red); }
 
 .subtitle {
   margin: 12px 0 0;
